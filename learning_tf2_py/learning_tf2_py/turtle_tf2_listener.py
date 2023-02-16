@@ -8,6 +8,7 @@ from rclpy.clock import Clock
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf2_ros import LookupException, ConnectivityException, ExtrapolationException
 
 from turtlesim.srv import Spawn
 
@@ -43,16 +44,22 @@ class FrameListener(Node):
         # compute transformations
         from_frame_rel = self.target_frame
         to_frame_rel = 'base_link'
-
         if self.turtle_spawning_service_ready:
             if self.turtle_spawned:
                 # Look up for the transformation between target_frame and turtle2 frames
                 # and send velocity commands for turtle2 to reach target_frame
                 try:
+                    now = self.get_clock().now()
                     t = self.tf_buffer.lookup_transform(
                         to_frame_rel,
                         from_frame_rel,
-                        rclpy.time.Time())
+                        # rclpy.time.Time(),
+                        now,
+                        timeout=rclpy.duration.Duration(seconds=1.0))
+                except (LookupException, ConnectivityException, ExtrapolationException):
+                    self.get_logger().info('transform not ready')
+                    raise
+                    return
                 except TransformException as ex:
                     self.get_logger().info(
                         f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')

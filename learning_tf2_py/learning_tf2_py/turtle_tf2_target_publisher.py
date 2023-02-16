@@ -74,7 +74,7 @@ class FramePublisher(Node):
         self.publisher = self.create_publisher(Twist, f'{self.turtlename}/cmd_vel', 1)
 
         # Call on_timer function every second
-        self.timer = self.create_timer(1.0, self.on_timer)
+        self.timer = self.create_timer(0.5, self.on_timer)
 
 
     def on_timer(self):
