@@ -24,14 +24,14 @@ def generate_launch_description():
                 {'turtlename': 'turtle1'} # broadcast position of vicon1
             ]
         ),
-        Node(
-            package='learning_tf2_py',
-            executable='turtle_tf2_broadcaster',
-            name='broadcaster2',
-            parameters=[
-                {'turtlename': 'turtle2'} # the actual robot
-            ]
-        ),
+        # Node(
+        #     package='learning_tf2_py',
+        #     executable='turtle_tf2_broadcaster',
+        #     name='broadcaster2',
+        #     parameters=[
+        #         {'turtlename': 'turtle2'} # the actual robot
+        #     ]
+        # ),
         Node( 
             package='learning_tf2_py',
             executable='turtle_tf2_target_publisher',
@@ -47,5 +47,10 @@ def generate_launch_description():
             parameters=[
                 {'target_frame': 'turtle1'} # move turtle1 to vicon1
             ]
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments = ['0', '0', '0', '0', '0', '0', 'world', 'odom']
         ),
     ])

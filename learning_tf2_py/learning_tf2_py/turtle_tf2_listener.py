@@ -4,7 +4,7 @@ from geometry_msgs.msg import Twist
 
 import rclpy
 from rclpy.node import Node
-
+from rclpy.clock import Clock
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -33,7 +33,7 @@ class FrameListener(Node):
         self.turtle_spawned = False
 
         # Create turtle2 velocity publisher
-        self.publisher = self.create_publisher(Twist, 'turtle2/cmd_vel', 1)
+        self.publisher = self.create_publisher(Twist, '/cmd_vel', 1)
 
         # Call on_timer function every second
         self.timer = self.create_timer(1.0, self.on_timer)
@@ -42,7 +42,7 @@ class FrameListener(Node):
         # Store frame names in variables that will be used to
         # compute transformations
         from_frame_rel = self.target_frame
-        to_frame_rel = 'turtle2'
+        to_frame_rel = 'base_link'
 
         if self.turtle_spawning_service_ready:
             if self.turtle_spawned:
@@ -82,7 +82,7 @@ class FrameListener(Node):
                 # Initialize request with turtle name and coordinates
                 # Note that x, y and theta are defined as floats in turtlesim/srv/Spawn
                 request = Spawn.Request()
-                request.name = 'turtle2'
+                request.name = 'base_link'
                 request.x = float(4)
                 request.y = float(2)
                 request.theta = float(0)
