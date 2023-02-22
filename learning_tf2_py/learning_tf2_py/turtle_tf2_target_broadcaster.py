@@ -11,7 +11,7 @@ from tf2_ros import TransformBroadcaster
 
 from turtlesim.msg import Pose
 from rosgraph_msgs.msg import Clock
-from rclpy.time import Time
+
 
 def quaternion_from_euler(ai, aj, ak):
     ai /= 2.0
@@ -40,64 +40,75 @@ def quaternion_from_euler(ai, aj, ak):
 class FramePublisher(Node):
 
     def __init__(self):
-        super().__init__('turtle_tf2_frame_publisher')
+        super().__init__('turtle_tf2_frame_broadcaster')
 
         # Declare and acquire `turtlename` parameter
         self.turtlename = self.declare_parameter(
           'turtlename', 'turtle').get_parameter_value().string_value
-
+        
+        # iteration from 0-360
+        self.iter = 0;
+        
         # Initialize the transform broadcaster
         self.tf_broadcaster = TransformBroadcaster(self)
 
         # Subscribe to a turtle{1}{2}/pose topic and call handle_turtle_pose
         # callback function on each message
-        # self.subscription_clock = self.create_subscription(
-        #     Clock,
-        #     'clock',
-        #     self.handle_clock,
-        #     1)
-        # self.subscription_clock  # prevent unused variable warning
+        self.positions = self.cirlceArrayCreater(radius = 5, stepSize=1/1000, origin=[0,0])
 
-
+        # clock publishes at 10Hz btw from gazebo...so callback is called 10 times a second
         self.subscription = self.create_subscription(
-            Pose,
-            f'/{self.turtlename}/pose',
-            self.handle_turtle_pose,
+            Clock,
+            '/clock',
+            self.clock_callback,
             1)
         self.subscription  # prevent unused variable warning
 
-    # def handle_clock(self, msg):
-    #     self.global_clock.nanoseconds = msg.clock.sec*1e9 + msg.clock.nanosec
-
-
-
-    def handle_turtle_pose(self, msg):
+    def clock_callback(self, msg):
         t = TransformStamped()
 
         # Read message content and assign it to
         # corresponding tf variables
-        t.header.stamp = self.get_clock().now().to_msg()
+        # t.header.stamp = self.get_clock().now().to_msg()
+        t.header.stamp = msg.clock
+
         t.header.frame_id = 'world'
-        t.child_frame_id = self.turtlename
+        t.child_frame_id = 'target'
 
         # Turtle only exists in 2D, thus we get x and y translation
         # coordinates from the message and set the z coordinate to 0
-        t.transform.translation.x = msg.x
-        t.transform.translation.y = msg.y
+        t.transform.translation.x = self.positions[self.iter][0]
+        t.transform.translation.y = self.positions[self.iter][1]
         t.transform.translation.z = 0.0
 
         # For the same reason, turtle can only rotate around one axis
         # and this why we set rotation in x and y to 0 and obtain
         # rotation in z axis from the message
-        q = quaternion_from_euler(0, 0, msg.theta)
+        theta = math.pi/2 + math.atan2(self.positions[self.iter][1], self.positions[self.iter][0])
+        q = quaternion_from_euler(0, 0, theta)
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
 
+        if self.iter < 3600:
+            self.iter = self.iter + 1
+        else:
+            self.iter = 0
+
         # Send the transformation
         self.tf_broadcaster.sendTransform(t)
-
+    
+        
+    def cirlceArrayCreater(self, radius, stepSize, origin):
+        a = origin[0]
+        b = origin[1]
+        positions = []
+        t = 0
+        while t < 2 * math.pi:
+            positions.append((radius * math.cos(t) + a, radius * math.sin(t) + b))
+            t += stepSize
+        return positions
 
 def main():
     rclpy.init()

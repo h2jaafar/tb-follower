@@ -6,12 +6,15 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    use_sim_time = LaunchConfiguration('use_sim_time', default='True')
     return LaunchDescription([
-        Node(
-            package='turtlesim',
-            executable='turtlesim_node',
-            name='sim'
-        ),
+        # Node(
+        #     package='turtlesim',
+        #     executable='turtlesim_node',
+        #     name='sim',
+        #     parameters=[
+        #         {'use_sim_time': 'False'}]
+        # ),
         DeclareLaunchArgument(
             'target_frame', default_value='vicon1', # this value can be passed through as launch... 
             description='Target frame name.'
