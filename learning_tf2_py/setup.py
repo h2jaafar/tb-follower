@@ -23,10 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-        'turtle_tf2_broadcaster = learning_tf2_py.turtle_tf2_broadcaster:main',
-        'turtle_tf2_target_broadcaster = learning_tf2_py.turtle_tf2_target_broadcaster:main',
-        'turtle_tf2_listener = learning_tf2_py.turtle_tf2_listener:main',
-
+        'turtlebot_tf2_target_broadcaster = learning_tf2_py.turtlebot_tf2_target_broadcaster:main',
+        'turtlebot_tf2_target_listener = learning_tf2_py.turtlebot_tf2_target_listener:main',
         ],
     },
 )

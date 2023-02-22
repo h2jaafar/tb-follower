@@ -40,11 +40,8 @@ def quaternion_from_euler(ai, aj, ak):
 class FramePublisher(Node):
 
     def __init__(self):
-        super().__init__('turtle_tf2_frame_broadcaster')
+        super().__init__('turtlebot_tf2_target_broadcaster')
 
-        # Declare and acquire `turtlename` parameter
-        self.turtlename = self.declare_parameter(
-          'turtlename', 'turtle').get_parameter_value().string_value
         
         # iteration from 0-360
         self.iter = 0;

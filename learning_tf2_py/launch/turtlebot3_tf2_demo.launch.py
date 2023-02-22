@@ -10,7 +10,12 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='learning_tf2_py',
-            executable='turtle_tf2_target_broadcaster',
+            executable='turtlebot_tf2_target_broadcaster',
             name='broadcaster',
+        ),
+        Node(
+            package='learning_tf2_py',
+            executable='turtlebot_tf2_target_listener',
+            name='listener',
         ),
     ])
