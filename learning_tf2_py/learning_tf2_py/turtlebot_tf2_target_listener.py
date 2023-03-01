@@ -42,8 +42,8 @@ class FrameListener(Node):
             self.clock_callback_lis,
             1)
         self.subscription  # prevent unused variable warning
-
         # Create turtle2 velocity publisher
+        self._loop_rate = self.create_rate(10, self.get_clock())
 
         # Call on_timer function every second
         # self.timer = self.create_timer(1.0, self.on_timer)
@@ -51,33 +51,50 @@ class FrameListener(Node):
     def clock_callback_lis(self, msg):
         # Store frame names in variables that will be used to
         # compute transformations
+        # rate = self.create_rate(10)
+
+
         from_frame_rel = self.target_frame
         to_frame_rel = 'base_link'
-        if self.turtle_spawning_service_ready:
-            if self.turtle_spawned:
-                # Look up for the transformation between target_frame and turtle2 frames
-                # and send velocity commands for turtle2 to reach target_frame
-                # try:
-                now = msg.clock
-                # now.sec = now.sec - 2
-                t = self.tf_buffer.lookup_transform(
-                    to_frame_rel,
-                    from_frame_rel,
-                    now,
-                    timeout=rclpy.duration.Duration(seconds=3.0))
+        # Look up for the transformation between target_frame and turtle2 frames
+        # and send velocity commands for turtle2 to reach target_frame
+        # try:
+        now = msg.clock
+        # now.sec = now.sec - 2
+        try:
+            # now = self.get_clock().now()
+            t = self.tf_buffer.lookup_transform(
+                to_frame_rel,
+                from_frame_rel,
+                now,
+                timeout=rclpy.duration.Duration(seconds=3.0))
+            self.get_logger().info('transformed success')
+            
+        except (LookupException, ConnectivityException, ExtrapolationException):
+            self.get_logger().info('transform not ready')
+            # self.get_logger().info()
+            self.get_logger().info(
+                f'not ready to transform {to_frame_rel} to {from_frame_rel}')
+            # raise
+            # self._loop_rate.sleep()
+            return
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            return
 
-                msg = Twist()
-                scale_rotation_rate = 1.0
-                msg.angular.z = scale_rotation_rate * math.atan2(
-                    t.transform.translation.y,
-                    t.transform.translation.x)
+        msg = Twist()
+        scale_rotation_rate = 1.0
+        msg.angular.z = scale_rotation_rate * math.atan2(
+            t.transform.translation.y,
+            t.transform.translation.x)
 
-                scale_forward_speed = 0.5
-                msg.linear.x = scale_forward_speed * math.sqrt(
-                    t.transform.translation.x ** 2 +
-                    t.transform.translation.y ** 2)
+        scale_forward_speed = 0.5
+        msg.linear.x = scale_forward_speed * math.sqrt(
+            t.transform.translation.x ** 2 +
+            t.transform.translation.y ** 2)
 
-                self.publisher.publish(msg)
+        self.publisher.publish(msg)
 
 
 def main():
