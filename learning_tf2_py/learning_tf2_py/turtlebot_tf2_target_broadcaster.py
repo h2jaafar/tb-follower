@@ -1,6 +1,7 @@
 import math
 
 from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import PoseStamped
 
 import numpy as np
 
@@ -61,6 +62,9 @@ class FramePublisher(Node):
             1)
         self.subscription  # prevent unused variable warning
 
+        self.publisher = self.create_publisher(PoseStamped, '/target_poses', 1)
+
+
     def clock_callback(self, msg):
         t = TransformStamped()
 
@@ -87,6 +91,20 @@ class FramePublisher(Node):
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
+
+
+        # also publish pose
+        pose_msg = PoseStamped()
+        pose_msg.header.stamp = msg.clock
+        pose_msg.pose.position.x = self.positions[self.iter][0]
+        pose_msg.pose.position.y = self.positions[self.iter][1]
+        pose_msg.pose.position.z = 0.0
+        pose_msg.pose.orientation.x = q[0]
+        pose_msg.pose.orientation.y = q[1]
+        pose_msg.pose.orientation.z = q[2]
+        pose_msg.pose.orientation.w = q[3]
+
+        self.publisher.publish(pose_msg)
 
         if self.iter < 3600:
             self.iter = self.iter + 1

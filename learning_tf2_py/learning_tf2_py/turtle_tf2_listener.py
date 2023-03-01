@@ -11,7 +11,7 @@ from tf2_ros.transform_listener import TransformListener
 from tf2_ros import LookupException, ConnectivityException, ExtrapolationException
 
 from turtlesim.srv import Spawn
-
+import time
 
 class FrameListener(Node):
 
@@ -37,6 +37,8 @@ class FrameListener(Node):
         self.publisher = self.create_publisher(Twist, '/cmd_vel', 1)
 
         # Call on_timer function every second
+        rate = self.create_rate(10)
+        rate.sleep() # wait until spawned
         self.timer = self.create_timer(1.0, self.on_timer)
 
     def on_timer(self):
@@ -44,61 +46,40 @@ class FrameListener(Node):
         # compute transformations
         from_frame_rel = self.target_frame
         to_frame_rel = 'base_link'
-        if self.turtle_spawning_service_ready:
-            if self.turtle_spawned:
-                # Look up for the transformation between target_frame and turtle2 frames
-                # and send velocity commands for turtle2 to reach target_frame
-                try:
-                    now = self.get_clock().now()
-                    t = self.tf_buffer.lookup_transform(
-                        to_frame_rel,
-                        from_frame_rel,
-                        # rclpy.time.Time(),
-                        now,
-                        timeout=rclpy.duration.Duration(seconds=1.0))
-                except (LookupException, ConnectivityException, ExtrapolationException):
-                    self.get_logger().info('transform not ready')
-                    raise
-                    return
-                except TransformException as ex:
-                    self.get_logger().info(
-                        f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
-                    return
 
-                msg = Twist()
-                scale_rotation_rate = 1.0
-                msg.angular.z = scale_rotation_rate * math.atan2(
-                    t.transform.translation.y,
-                    t.transform.translation.x)
+        # Look up for the transformation between target_frame and turtle2 frames
+        # and send velocity commands for turtle2 to reach target_frame
+        try:
+            now = self.get_clock().now()
+            t = self.tf_buffer.lookup_transform(
+                to_frame_rel,
+                from_frame_rel,
+                # rclpy.time.Time(),
+                now,
+                timeout=rclpy.duration.Duration(seconds=3.0))
+        except (LookupException, ConnectivityException, ExtrapolationException):
+            self.get_logger().info('transform not ready')
+            # raise
+            # rate.sleep()
+            return
+        except TransformException as ex:
+            self.get_logger().info(
+                f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
+            return
 
-                scale_forward_speed = 0.5
-                msg.linear.x = scale_forward_speed * math.sqrt(
-                    t.transform.translation.x ** 2 +
-                    t.transform.translation.y ** 2)
+        msg = Twist()
+        scale_rotation_rate = 1.0
+        msg.angular.z = scale_rotation_rate * math.atan2(
+            t.transform.translation.y,
+            t.transform.translation.x)
 
-                self.publisher.publish(msg)
-            else:
-                if self.result.done():
-                    self.get_logger().info(
-                        f'Successfully spawned {self.result.result().name}')
-                    self.turtle_spawned = True
-                else:
-                    self.get_logger().info('Spawn is not finished')
-        else:
-            if self.spawner.service_is_ready():
-                # Initialize request with turtle name and coordinates
-                # Note that x, y and theta are defined as floats in turtlesim/srv/Spawn
-                request = Spawn.Request()
-                request.name = 'base_link'
-                request.x = float(4)
-                request.y = float(2)
-                request.theta = float(0)
-                # Call request
-                self.result = self.spawner.call_async(request)
-                self.turtle_spawning_service_ready = True
-            else:
-                # Check if the service is ready
-                self.get_logger().info('Service is not ready')
+        scale_forward_speed = 0.5
+        msg.linear.x = scale_forward_speed * math.sqrt(
+            t.transform.translation.x ** 2 +
+            t.transform.translation.y ** 2)
+
+        self.publisher.publish(msg)
+
 
 
 def main():
